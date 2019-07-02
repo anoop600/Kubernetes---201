@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: results
+  namespace: instavote
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  revisionHistoryLimit: 4
+  paused: false
+  replicas: 3
+  minReadySeconds: 20
+  selector:
+    matchLabels:
+      role: results
+    matchExpressions:
+      - {key: version, operator: In, values: [v1, v2, v3, latest]}
+  template:
+    metadata:
+      name: results
+      labels:
+        app: node
+        role: results
+        version: latest
+    spec:
+      containers:
+        - name: app
+          image: anoop600/vote-result:latest
+          livenessProbe:
+            tcpSocket:
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          readinessProbe:
+            tcpSocket:
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          resources:
+           requests:
+             memory: "50Mi"
+             cpu: "10m"
+           limits:
+             memory: "100Mi"
+             cpu: "100m"

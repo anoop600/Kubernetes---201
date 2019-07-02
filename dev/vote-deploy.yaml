@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vote
+  namespace: instavote
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 1
+  revisionHistoryLimit: 4
+  paused: false
+  minReadySeconds: 20
+  selector:
+    matchLabels:
+      role: vote
+    matchExpressions:
+      - {key: version, operator: In, values: [v1, v2, v3]}
+  template:
+    metadata:
+      name: vote
+      labels:
+        app: python
+        role: vote
+        version: v1
+    spec:
+      containers:
+        - name: app
+          image: anoop600/vote:v1
+          livenessProbe:
+            tcpSocket:
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          readinessProbe:
+            tcpSocket:
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          envFrom:
+            - configMapRef:
+                name: vote
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          resources:
+           requests:
+             memory: "100Mi"
+             cpu: "10m"
+           limits:
+             memory: "256Mi"
+             cpu: "100m"
